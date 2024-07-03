@@ -1,2 +1,3 @@
 # Flappy-Bird
-A simple game made in python
+A copy of the original one made in python
+
