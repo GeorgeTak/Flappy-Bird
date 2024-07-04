@@ -45,6 +45,9 @@ GREEN = (0, 255, 0)
 RED = (255, 0, 0)
 DARK_GREEN = (1, 50, 32)
 YELLOW = (255, 255, 0)
+ORANGE = (255, 165, 0)
+PURPLE = (128, 0, 128)
+
 
 # Game variables
 GRAVITY = 0.5
@@ -59,12 +62,24 @@ HIGH_SCORE = 0  # Add this line to initialize the high score variable
 # Load images
 BIRD_IMG = pygame.image.load("bird_transparent.png").convert_alpha()
 BIRD_IMG = pygame.transform.scale(BIRD_IMG, (30, 30))
-# BIRD_IMG.fill(YELLOW)
 BACKGROUND_IMG = pygame.image.load("background.png").convert()
 BACKGROUND_IMG = pygame.transform.scale(BACKGROUND_IMG, (SCREEN_WIDTH, SCREEN_HEIGHT))
 
 # Initialize clock
 clock = pygame.time.Clock()
+
+
+def change_bird_color():
+    new_color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+    data = img.getdata()
+    new_data = []
+    for item in data:
+        if item[3] != 0:  # Preserve alpha channel
+            new_data.append((new_color[0], new_color[1], new_color[2], item[3]))
+        else:
+            new_data.append(item)
+    img.putdata(new_data)
+    img.save("C:/Users/gtak2/PycharmProjects/flappy/bird_transparent.png", "PNG")
 
 
 # Function to draw pipes
@@ -148,14 +163,15 @@ def menu():
 def game_over_screen():
     font = pygame.font.SysFont(None, 36)
     game_over_text = font.render('GAME OVER!!', True, RED)
-    SCREEN.blit(game_over_text, (SCREEN_WIDTH // 2 - game_over_text.get_width() // 2, SCREEN_HEIGHT // 2 - game_over_text.get_height() // 2))
+    SCREEN.blit(game_over_text, (
+        SCREEN_WIDTH // 2 - game_over_text.get_width() // 2, SCREEN_HEIGHT // 2 - game_over_text.get_height() // 2))
     pygame.display.flip()
     pygame.time.wait(2000)  # Wait for 2 seconds before returning to the menu
 
 
 # Main game function
 def game():
-    global HIGH_SCORE
+    global HIGH_SCORE, BIRD_IMG
     bird = pygame.Rect(100, 300, BIRD_SIZE, BIRD_SIZE)
     bird_speed = 0
     pipes = []
@@ -167,7 +183,8 @@ def game():
         pipe_height = random.randint(150, 450)
         pipes.append({
             'top': pygame.Rect(SCREEN_WIDTH + i * (PIPE_WIDTH + 200), 0, PIPE_WIDTH, pipe_height),
-            'bottom': pygame.Rect(SCREEN_WIDTH + i * (PIPE_WIDTH + 200), pipe_height + PIPE_GAP, PIPE_WIDTH, SCREEN_HEIGHT)
+            'bottom': pygame.Rect(SCREEN_WIDTH + i * (PIPE_WIDTH + 200), pipe_height + PIPE_GAP, PIPE_WIDTH,
+                                  SCREEN_HEIGHT)
         })
 
     running = True
@@ -200,6 +217,9 @@ def game():
                 'bottom': pygame.Rect(SCREEN_WIDTH, pipe_height + PIPE_GAP, PIPE_WIDTH, SCREEN_HEIGHT)
             })
             score += 1
+            change_bird_color()  # Change bird color
+            BIRD_IMG = pygame.image.load("bird_transparent.png").convert_alpha()
+            BIRD_IMG = pygame.transform.scale(BIRD_IMG, (30, 30))
 
         # Draw everything
         SCREEN.blit(BIRD_IMG, (bird.x, bird.y))
@@ -220,7 +240,6 @@ def game():
 
     game_over_screen()
     menu()
-
 
 
 # Run the menu
