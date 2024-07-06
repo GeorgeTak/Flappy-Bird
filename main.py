@@ -1,7 +1,10 @@
+import datetime
 import pygame
 import random
 import time
+import csv
 from PIL import Image
+import os
 
 # Load the image
 img_path = "C:/Users/gtak2/PycharmProjects/flappy/bird.png"
@@ -48,7 +51,6 @@ YELLOW = (255, 255, 0)
 ORANGE = (255, 165, 0)
 PURPLE = (128, 0, 128)
 
-
 # Game variables
 GRAVITY = 0.5
 BIRD_JUMP = -10
@@ -67,6 +69,35 @@ BACKGROUND_IMG = pygame.transform.scale(BACKGROUND_IMG, (SCREEN_WIDTH, SCREEN_HE
 
 # Initialize clock
 clock = pygame.time.Clock()
+
+# Global variables
+player_id = 1  # Starting player ID
+
+
+# Function to increment player ID
+def increment_player_id():
+    global player_id
+    player_id += 1
+
+
+# Function to write score to CSV
+def write_score_to_csv(score):
+    global player_id
+    current_datetime = datetime.datetime.now()
+    date_str = current_datetime.strftime("%Y-%m-%d")
+    time_str = current_datetime.strftime("%H:%M:%S")
+
+    file_exists = os.path.isfile("scores.csv")
+
+    with open("scores.csv", mode="a", newline='') as file:
+        writer = csv.writer(file)
+
+        if not file_exists:
+            writer.writerow(["Player ID", "Score", "Date", "Time"])  # Write headers if file is empty
+
+        writer.writerow([player_id, score, date_str, time_str])
+
+    increment_player_id()  # Increment player ID after writing score
 
 
 def change_bird_color():
@@ -159,14 +190,58 @@ def menu():
         clock.tick(15)
 
 
-# Function to display "GAME OVER" message
-def game_over_screen():
-    font = pygame.font.SysFont(None, 36)
-    game_over_text = font.render('GAME OVER!!', True, RED)
-    SCREEN.blit(game_over_text, (
-        SCREEN_WIDTH // 2 - game_over_text.get_width() // 2, SCREEN_HEIGHT // 2 - game_over_text.get_height() // 2))
-    pygame.display.flip()
-    pygame.time.wait(2000)  # Wait for 2 seconds before returning to the menu
+def game_over_screen(score):
+    global HIGH_SCORE
+    fadeout_alpha = 0
+    game_over_font = pygame.font.SysFont(None, 72)
+    button_font = pygame.font.SysFont(None, 36)
+
+    game_over_text = game_over_font.render('GAME OVER!!', True, RED)
+    game_over_rect = game_over_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 50))
+
+    # Write score to CSV with global player_id
+    write_score_to_csv(score)
+
+    while True:
+        SCREEN.blit(BACKGROUND_IMG, (0, 0))
+
+        # Gradually fade out the background
+        fadeout_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+        fadeout_surface.fill((0, 0, 0))
+        fadeout_surface.set_alpha(fadeout_alpha)
+        SCREEN.blit(fadeout_surface, (0, 0))
+
+        # Display "GAME OVER!!" text
+        SCREEN.blit(game_over_text, game_over_rect)
+
+        # Display score and high score
+        score_text = button_font.render(f'Your Score: {score}', True, WHITE)
+        score_rect = score_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 50))
+        SCREEN.blit(score_text, score_rect)
+
+        high_score_text = button_font.render(f'High Score: {HIGH_SCORE}', True, WHITE)
+        high_score_rect = high_score_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 100))
+        SCREEN.blit(high_score_text, high_score_rect)
+
+        # Draw buttons
+        play_again = draw_button("Play Again", 120, SCREEN_HEIGHT - 150, 150, 50, GREEN, (0, 200, 0))
+        exit_game = draw_button("Exit", 150, SCREEN_HEIGHT - 80, 100, 50, RED, (200, 0, 0))
+
+        if play_again:
+            return "play"
+        elif exit_game:
+            pygame.quit()
+            quit()
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+
+        pygame.display.flip()
+        clock.tick(15)
+        if fadeout_alpha < 150:
+            fadeout_alpha += 5
 
 
 # Main game function
@@ -238,7 +313,7 @@ def game():
     if score > HIGH_SCORE:
         HIGH_SCORE = score
 
-    game_over_screen()
+    game_over_screen(score)
     menu()
 
 
